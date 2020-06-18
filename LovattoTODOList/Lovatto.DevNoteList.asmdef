@@ -1,0 +1,8 @@
+{
+    "name": "Lovatto.DevNoteList",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}
