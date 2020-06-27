@@ -1,21 +1,20 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using System.IO;
 using UnityEditorInternal;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 public class bl_DevNoteList : EditorWindow
 {
-   // private string ListJson = string.Empty;
     public bl_DevNotesInfo Notes;
     private bool showAddBox = false;
     public bl_DevNotesStats Stats = new bl_DevNotesStats();
     private string AddComment = "";
     private string AddNote = "";
     private int AddCat = 0;
-   // public const string PresentPath = "Assets/DevTools/DevNoteList/Notes/wip.txt";
     private int ShowCat = 0;
     private int OpenCommentID = -1;
     private int windowID = 0;
@@ -40,14 +39,6 @@ public class bl_DevNoteList : EditorWindow
         LoadList();
 
         lastListID = settings.CurrentList;
-        /*StreamReader reader = new StreamReader(PresentPath);
-        ListJson = reader.ReadToEnd();
-        reader.Close();
-
-        if (!string.IsNullOrEmpty(ListJson))
-        {
-            Notes = JsonUtility.FromJson<bl_DevNotesInfo>(ListJson);
-        }*/
         if (notesList == null)
         {
             serializedObject = new SerializedObject(this);
@@ -124,7 +115,13 @@ public class bl_DevNoteList : EditorWindow
             {
                 windowID = 0;
             }
-            if (windowID == 1) { GUILayout.Space(20); }
+            if (windowID == 1)
+            {
+                if (GUILayout.Button("P", EditorStyles.toolbarButton, GUILayout.Width(20)))
+                {
+                    PrintRawHistory();
+                }
+            }
         }
         else
         {
@@ -542,17 +539,22 @@ public class bl_DevNoteList : EditorWindow
         SaveNotes();
     }
 
+    void PrintRawHistory()
+    {
+        string[] list = Notes.HistoryNotes.Select(x => x.Note).ToArray();
+        string str = "";
+        for (int i = list.Length - 1; i > 0; i--)
+        {
+            str += $"{list[i]}\n";
+        }
+        NoteListTexBox.Show(str);
+    }
+
     /// <summary>
     /// 
     /// </summary>
     void SaveNotes()
     {
-        //NotesList = Notes.Notes;
-        /*string json = JsonUtility.ToJson(Notes);
-        StreamWriter writer = new StreamWriter(PresentPath, false);
-        writer.WriteLine(json);
-        writer.Close();
-        AssetDatabase.ImportAsset(PresentPath);*/
         settings.SaveList(Notes);
     }
 
@@ -561,6 +563,7 @@ public class bl_DevNoteList : EditorWindow
         get
         {
             List<string> list = new List<string>();
+            if (Notes == null) return list;
             for (int i = 0; i < Notes.AllCategorys.Count; i++)
             {
                 list.Add(Notes.AllCategorys[i].Name);

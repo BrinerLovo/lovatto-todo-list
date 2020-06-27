@@ -73,3 +73,18 @@ public class bl_DevNotesStats
         }
     }
 }
+
+public class NoteListTexBox : EditorWindow
+{
+    public string str = "";
+    public static void Show(string message)
+    {
+        NoteListTexBox window = GetWindow<NoteListTexBox>();
+        window.str = message;
+    }
+
+    private void OnGUI()
+    {
+        EditorGUILayout.TextArea(str,GUILayout.ExpandHeight(true));
+    }
+}
