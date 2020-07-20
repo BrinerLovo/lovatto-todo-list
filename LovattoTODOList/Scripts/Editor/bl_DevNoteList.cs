@@ -4,8 +4,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Diagnostics;
+using System.Globalization;
 
 public class bl_DevNoteList : EditorWindow
 {
@@ -28,6 +27,8 @@ public class bl_DevNoteList : EditorWindow
     public SerializedObject serializedObject;
     public bl_DevNoteSettings settings;
     private int lastListID = 0;
+    private GUIStyle miniLabelStyle;
+    private CultureInfo cultureInfo = new CultureInfo("en-US");
 
     /// <summary>
     /// 
@@ -62,8 +63,9 @@ public class bl_DevNoteList : EditorWindow
         }
         titleContent = new GUIContent("Notes");
         minSize = new Vector2(435, 250);
-        icons[0] = GetUnityIcon("d_winbtn_win_close_a");
+        icons[0] = GetUnityIcon("d_LookDevClose");
         icons[1] = GetUnityIcon("ol plus");
+        icons[2] = GetUnityIcon("d_Profiler.PrevFrame");
         whiteBox = Texture2D.whiteTexture;
     }
 
@@ -82,8 +84,15 @@ public class bl_DevNoteList : EditorWindow
     /// </summary>
     private void OnGUI()
     {
-        GUI.skin.label.richText = true;
-        EditorStyles.label.richText = true;
+        if (miniLabelStyle == null)
+        {
+            GUI.skin.label.richText = true;
+            EditorStyles.label.richText = true;
+            miniLabelStyle = new GUIStyle(EditorStyles.wordWrappedMiniLabel);
+            miniLabelStyle.richText = true;
+            miniLabelStyle.normal.textColor = new Color(0.8f, 0.8f, 0.8f, 1);
+            miniLabelStyle.padding.top = -1;
+        }
         DrawHeader();
         if (windowID == 0)
         {
@@ -111,7 +120,7 @@ public class bl_DevNoteList : EditorWindow
         GUILayout.BeginHorizontal(EditorStyles.toolbarButton);
         if (windowID > 0)
         {
-            if (GUILayout.Button("←", EditorStyles.toolbarButton, GUILayout.Width(20)))
+            if (GUILayout.Button(new GUIContent(icons[2]), EditorStyles.toolbarButton, GUILayout.Width(20)))
             {
                 windowID = 0;
             }
@@ -143,11 +152,11 @@ public class bl_DevNoteList : EditorWindow
                 AddHistorySeparator();
             }
         }
-        if (GUILayout.Button("R", EditorStyles.toolbarButton, GUILayout.Width(20)))
+      /*  if (GUILayout.Button("R", EditorStyles.toolbarButton, GUILayout.Width(20)))
         {
             reorderableMode = !reorderableMode;
-        }
-        if (GUILayout.Button("☁", EditorStyles.toolbarButton, GUILayout.Width(20)))
+        }*/
+        if (GUILayout.Button(EditorGUIUtility.IconContent("d_CloudConnect"), EditorStyles.toolbarButton, GUILayout.Width(25)))
         {
             SaveNotes();
         }
@@ -215,7 +224,7 @@ public class bl_DevNoteList : EditorWindow
                 else { GUILayout.Box("", EditorStyles.wordWrappedLabel, GUILayout.Width(16)); }
                 if (GUILayout.Button("✓", EditorStyles.wordWrappedLabel, GUILayout.Width(16)))
                 {
-                    RemoveNote(i);
+                    OnCompleteJob(i);
                 }
                 EditorGUILayout.EndHorizontal();
                 if(OpenCommentID != -1 && OpenCommentID == i)
@@ -258,7 +267,7 @@ public class bl_DevNoteList : EditorWindow
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(new GUIContent(" ADD", icons[1]), EditorStyles.toolbarButton))
             {
-                AddField();
+                AddNewJob();
             }
             if (GUILayout.Button("Cancel", EditorStyles.toolbarButton, GUILayout.Width(100)))
             {
@@ -297,6 +306,10 @@ public class bl_DevNoteList : EditorWindow
 
     void DrawAddBox()
     {
+        if(Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Return)
+        {
+            AddNewJob();
+        }
         GUILayout.BeginVertical("box");
         AddCat = EditorGUILayout.Popup(AddCat, CategoryString.ToArray(), GUILayout.Width(60));
         AddNote = GUILayout.TextArea(AddNote, GUILayout.Height(22));
@@ -305,7 +318,7 @@ public class bl_DevNoteList : EditorWindow
         GUILayout.BeginHorizontal();
         if (GUILayout.Button(new GUIContent(" ADD", icons[1]), EditorStyles.toolbarButton))
         {
-            AddField();
+            AddNewJob();
         }
         if (GUILayout.Button("Cancel", EditorStyles.toolbarButton, GUILayout.Width(100)))
         {
@@ -371,7 +384,7 @@ public class bl_DevNoteList : EditorWindow
         r.height = EditorGUIUtility.singleLineHeight;
         if (GUI.Button(r, "✓", EditorStyles.wordWrappedLabel))
         {
-            RemoveNote(index);
+            OnCompleteJob(index);
         }
         r.x -= 20;
         if (GUI.Button(r, "✉", EditorStyles.wordWrappedLabel))
@@ -390,7 +403,7 @@ public class bl_DevNoteList : EditorWindow
         }
     }
 
-    void DrawWhiteBox(Rect rect, Color color)
+    public void DrawWhiteBox(Rect rect, Color color)
     {
         GUI.color = color;
         GUI.DrawTexture(rect, whiteBox, ScaleMode.StretchToFill);
@@ -402,50 +415,59 @@ public class bl_DevNoteList : EditorWindow
     /// </summary>
     void DrawHistory()
     {
-        if (Notes != null)
-        {
-            DrawWindowArea();
-            historyScroll = GUILayout.BeginScrollView(historyScroll, "box");
-            bool bg = false;
-            for (int i = Notes.HistoryNotes.Count - 1; i >= 0; i--)
-            {
-                bl_DevNotesInfo.Info note = Notes.HistoryNotes[i];
-                Rect r = EditorGUILayout.BeginHorizontal();
-                if (bg)
-                {
-                    r.y += 1;
-                    r.height += 2;
-                    GUI.Box(r, GUIContent.none);
-                }
-                if (note.noteType == bl_DevNotesInfo.NoteType.Note)
-                {
-                    GUI.color = Notes.AllCategorys[Notes.HistoryNotes[i].CategoryID].Color;
-                    GUILayout.Box("", GUILayout.Width(3), GUILayout.Height(15));
-                    GUI.color = Color.white;
-                    EditorGUILayout.Popup(note.CategoryID, CategoryString.ToArray(), EditorStyles.helpBox, GUILayout.Width(60));
-                    GUILayout.TextField(note.Note, EditorStyles.wordWrappedLabel);
-                    GUILayout.FlexibleSpace();
-                }
-                else if (note.noteType == bl_DevNotesInfo.NoteType.Separator)
-                {
-                    Rect lr = GUILayoutUtility.GetRect(position.width - 60, 15);
-                    lr.height = 1;
-                    lr.y += 9;
-                    DrawWhiteBox(lr, new Color(1,1,1,0.5f));
-                    //GUILayout.FlexibleSpace();
-                }
+        if (Notes == null) return;
 
-                if (GUILayout.Button(new GUIContent(icons[0]), EditorStyles.label, GUILayout.Width(20)))
-                {
-                    Notes.HistoryNotes.RemoveAt(i);
-                    SaveNotes();
-                }
-                EditorGUILayout.EndHorizontal();
-                bg = !bg;
+        DrawWindowArea();
+        historyScroll = GUILayout.BeginScrollView(historyScroll, "box");
+        bool bg = false;
+        for (int i = Notes.HistoryNotes.Count - 1; i >= 0; i--)
+        {
+            bl_DevNotesInfo.Info note = Notes.HistoryNotes[i];
+            Rect r = EditorGUILayout.BeginHorizontal();
+            Rect sr = r;
+            if (bg)
+            {
+                DrawWhiteBox(r, new Color(0, 0, 0, 0.2f));
             }
-            GUILayout.EndScrollView();
-            GUILayout.EndArea();
+            if (note.noteType == bl_DevNotesInfo.NoteType.Note)
+            {
+                sr.width = 3;
+                Color c = Notes.AllCategorys[note.CategoryID].Color;
+                DrawWhiteBox(sr, c);
+                GUILayout.Space(4);
+             
+                sr = GUILayoutUtility.GetRect(60,EditorGUIUtility.singleLineHeight);
+                DrawWhiteBox(sr, new Color(0,0,0,0.3f));
+                EditorGUI.LabelField(sr, Notes.AllCategorys[note.CategoryID].Name);
+
+                EditorGUILayout.LabelField(note.Note, miniLabelStyle);
+                GUILayout.FlexibleSpace();
+                if (!string.IsNullOrEmpty(note.CompleteDate))
+                {
+                    var cDate = DateTime.Parse(note.CompleteDate, cultureInfo);
+                    string timeRelative = bl_DevNotesUtils.GetRelativeTimeName(cDate);
+                    EditorGUILayout.LabelField($"<size=8><i>{timeRelative}</i></size>", miniLabelStyle);
+                }
+            }
+            else if (note.noteType == bl_DevNotesInfo.NoteType.Separator)
+            {
+                Rect lr = GUILayoutUtility.GetRect(position.width - 60, 15);
+                lr.height = 1;
+                lr.y += 9;
+                DrawWhiteBox(lr, new Color(1, 1, 1, 0.5f));
+            }
+
+            if (GUILayout.Button(new GUIContent(icons[0]), EditorStyles.label, GUILayout.Width(20)))
+            {
+                Notes.HistoryNotes.RemoveAt(i);
+                SaveNotes();
+            }
+            EditorGUILayout.EndHorizontal();
+            GUILayout.Space(2);
+            bg = !bg;
         }
+        GUILayout.EndScrollView();
+        GUILayout.EndArea();
     }
 
     /// <summary>
@@ -503,7 +525,7 @@ public class bl_DevNoteList : EditorWindow
     /// <summary>
     /// 
     /// </summary>
-    void AddField()
+    void AddNewJob()
     {
         if(Notes == null)
         {
@@ -514,6 +536,7 @@ public class bl_DevNoteList : EditorWindow
         info.Note = AddNote;
         info.Comment = AddComment;
         info.noteType = bl_DevNotesInfo.NoteType.Note;
+        info.CreateDate = GetTodayDateAsString();
         Notes.Notes.Add(info);
         SaveNotes();
         showAddBox = false;
@@ -522,8 +545,9 @@ public class bl_DevNoteList : EditorWindow
         Repaint();
     }
 
-    void RemoveNote(int index)
+    void OnCompleteJob(int index)
     {
+        Notes.Notes[index].CompleteDate = GetTodayDateAsString();
         Notes.HistoryNotes.Add(Notes.Notes[index]);
         Notes.Notes.RemoveAt(index);
         SaveNotes();
@@ -563,7 +587,6 @@ public class bl_DevNoteList : EditorWindow
         get
         {
             List<string> list = new List<string>();
-            if (Notes == null) return list;
             for (int i = 0; i < Notes.AllCategorys.Count; i++)
             {
                 list.Add(Notes.AllCategorys[i].Name);
@@ -575,6 +598,12 @@ public class bl_DevNoteList : EditorWindow
     public static void DrawWindowArea()
     {
         GUILayout.BeginArea(new Rect(0, 32, Screen.width, Screen.height - 86));
+    }
+
+    public static string GetTodayDateAsString()
+    {
+        var en = new CultureInfo("en-US");
+        return DateTime.Now.ToString(en);
     }
 
     [MenuItem("Lovatto/Note List")]

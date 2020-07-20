@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 
 [System.Serializable]
@@ -15,6 +17,8 @@ public class bl_DevNotesInfo
         public string Note;
         public string Comment;
         public int CategoryID;
+        public string CreateDate;
+        public string CompleteDate;
 
         public NoteType noteType = NoteType.Note;
     }

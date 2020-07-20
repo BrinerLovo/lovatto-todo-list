@@ -36,23 +36,12 @@ public class bl_DevNoteSettings
 
     public bl_DevNotesInfo GetNoteList()
     {
-        if(allList == null || allList.Count <= 0)
-        {
-            CreateDefaultList();
-        }
         string path = allList[CurrentList].GetPath();
         bl_DevNotesInfo list;
         if (File.Exists(path))
         {
             string json = File.ReadAllText(path);
-            if (!string.IsNullOrEmpty(json))
-            {
-                list = JsonUtility.FromJson<bl_DevNotesInfo>(json);
-            }
-            else
-            {
-                list = new bl_DevNotesInfo();
-            }
+            list = JsonUtility.FromJson<bl_DevNotesInfo>(json);
         }
         else
         {
@@ -81,23 +70,6 @@ public class bl_DevNoteSettings
             writer.WriteLine(json);
             writer.Close();
         }
-    }
-
-    void CreateDefaultList()
-    {
-        string path = GetDevNoteScriptPath();
-        string settingsPath = $"{path}/Lists/notes.txt";
-        CurrentList = 0;
-        allList.Add(new ListInfo()
-        {
-            Name = "notes",
-            Path = settingsPath
-        });
-
-        string data = JsonUtility.ToJson(this);
-        StreamWriter writer = new StreamWriter(settingsPath, false);
-        writer.WriteLine(data);
-        writer.Close();
     }
 
     public void AddList()
