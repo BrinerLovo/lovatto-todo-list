@@ -20,14 +20,14 @@ public class bl_DevNoteList : EditorWindow
     private Vector2 noteScroll;
     private Vector2 historyScroll;
     private bool showSort = false;
-    public Texture[] icons = new Texture[4];
+    public Texture[] icons = new Texture[5];
     private Texture2D whiteBox;
     private bool reorderableMode = true;
     public ReorderableList notesList;
     public SerializedObject serializedObject;
     public bl_DevNoteSettings settings;
     private int lastListID = 0;
-    private GUIStyle miniLabelStyle;
+    private static GUIStyle miniLabelStyle = null;
     private CultureInfo cultureInfo = new CultureInfo("en-US");
 
     /// <summary>
@@ -63,9 +63,11 @@ public class bl_DevNoteList : EditorWindow
         }
         titleContent = new GUIContent("Notes");
         minSize = new Vector2(435, 250);
-        icons[0] = GetUnityIcon("d_LookDevClose");
+        icons[0] = GetUnityIcon("d_clear");
         icons[1] = GetUnityIcon("ol plus");
         icons[2] = GetUnityIcon("d_Profiler.PrevFrame");
+        icons[3] = GetUnityIcon("align_vertically_center_active");
+        icons[4] = GetUnityIcon("HorizontalSplit");
         whiteBox = Texture2D.whiteTexture;
     }
 
@@ -147,15 +149,11 @@ public class bl_DevNoteList : EditorWindow
         }
         if (windowID == 1)
         {
-            if (GUILayout.Button("--", EditorStyles.toolbarButton, GUILayout.Width(20)))
+            if (GUILayout.Button(new GUIContent(icons[4]), EditorStyles.label, GUILayout.Width(20)))
             {
                 AddHistorySeparator();
             }
         }
-      /*  if (GUILayout.Button("R", EditorStyles.toolbarButton, GUILayout.Width(20)))
-        {
-            reorderableMode = !reorderableMode;
-        }*/
         if (GUILayout.Button(EditorGUIUtility.IconContent("d_CloudConnect"), EditorStyles.toolbarButton, GUILayout.Width(25)))
         {
             SaveNotes();
@@ -492,7 +490,7 @@ public class bl_DevNoteList : EditorWindow
             windowID = 2;
         }
         GUILayout.FlexibleSpace();
-        if (GUILayout.Button("✎", EditorStyles.wordWrappedLabel, GUILayout.Width(22)))
+        if (GUILayout.Button(new GUIContent(icons[3]), EditorStyles.wordWrappedLabel, GUILayout.Width(22)))
         {
             bl_DevNotesCategorys cat = EditorWindow.GetWindow<bl_DevNotesCategorys>();
             cat.SetNotes(Notes, this);

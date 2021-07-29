@@ -1,0 +1,20 @@
+{
+  "name": "com.lovatto.editor.todolist",
+  "version": "1.0.0",
+  "displayName": "Lovatto TODO List",
+  "description": "Unity editor TODO list.",
+  "documentationUrl": "",
+  "changelogUrl": "",
+  "licensesUrl": "",
+  "keywords": [
+    "todo",
+    "list"
+  ],
+  "author": {
+    "name": "Lovatto",
+    "email": "contact.lovattostudio@gmail.com",
+    "url": "https://www.lovattostudio.com"
+  },
+  "type": "tool",
+  "hideInEditor": false
+}

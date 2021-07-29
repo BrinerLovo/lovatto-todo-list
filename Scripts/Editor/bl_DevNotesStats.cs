@@ -14,6 +14,7 @@ public class bl_DevNotesStats
     int lastCount = -1;
     private AnimationCurve dateGraph = AnimationCurve.Linear(0, 0, 30, 30);
     private Dictionary<int, int> jobsInMonthPerDay;
+    private string today, midMonth, starMonth = "";
 
     /// <summary>
     /// 
@@ -39,7 +40,7 @@ public class bl_DevNotesStats
             GUILayout.BeginHorizontal();        
             Rect r = GUILayoutUtility.GetRect(70, EditorGUIUtility.singleLineHeight);
             DrawWhiteBox(r, Color.black);
-            EditorGUI.LabelField(r, CompletedTaks[i].Category.Name + "s");
+            EditorGUI.LabelField(r, CompletedTaks[i].Category.Name + "s", centerLabelStyle);
 
             Color c = CompletedTaks[i].Category.Color;
             c.a = 0.4f;
@@ -103,11 +104,19 @@ public class bl_DevNotesStats
         EditorGUILayout.BeginVertical("box");
         {
             EditorGUILayout.CurveField(dateGraph, Color.yellow, Rect.zero, GUILayout.ExpandWidth(true), GUILayout.Height(100));
+            EditorGUILayout.BeginHorizontal();
+            {
+                EditorGUILayout.LabelField($"<size=8>{starMonth}</size>", centerLabelStyle, GUILayout.Width(40));
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.LabelField($"<size=8>{midMonth}</size>", centerLabelStyle, GUILayout.Width(40));
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.LabelField($"<size=8>{today}</size>", centerLabelStyle, GUILayout.Width(40));
+            }
+            EditorGUILayout.EndHorizontal();
         }
         EditorGUILayout.EndVertical();
 
         Rect r = GUILayoutUtility.GetLastRect();
-      //  DrawWhiteBox(r, new Color(0, 0, 0, 0.5f));
         DrawLines(r);
     }
 
@@ -149,6 +158,13 @@ public class bl_DevNotesStats
         weekJobs = 0;
         monthJobs = 0;
         jobsInMonthPerDay = new Dictionary<int, int>();
+        today = $"{DateTime.Now.Day} {DateTime.Now.ToString("MMMM")}";
+        DateTime lastMonth = DateTime.Now.AddDays(-30);
+        starMonth = $"{lastMonth.Day} {lastMonth.ToString("MMMM")}";
+
+        lastMonth = DateTime.Now.AddDays(-15);
+        midMonth = $"{lastMonth.Day} {lastMonth.ToString("MMMM")}";
+
         for (int i = 0; i < notes.HistoryNotes.Count; i++)
         {
             var note = notes.HistoryNotes[i];
@@ -157,15 +173,21 @@ public class bl_DevNotesStats
             DateTime date = bl_DevNotesUtils.ParseDate(note.CompleteDate);
             var ts = new TimeSpan(DateTime.Now.Ticks - date.Ticks);
 
-            if(ts.TotalDays <= 30)
+            if (ts.TotalDays <= 30)
             {
-                if (!jobsInMonthPerDay.ContainsKey((int)ts.TotalDays))
+                int day = 30 - Mathf.FloorToInt((float)ts.TotalDays);
+                if(ts.TotalDays < 1)
                 {
-                    jobsInMonthPerDay.Add((int)ts.TotalDays, 1);
+                    day = 30;
+                }
+
+                if (!jobsInMonthPerDay.ContainsKey(day))
+                {
+                    jobsInMonthPerDay.Add(day, 1);
                 }
                 else
                 {
-                    jobsInMonthPerDay[(int)ts.TotalDays]++;
+                    jobsInMonthPerDay[day]++;
                 }
             }
 
@@ -191,13 +213,20 @@ public class bl_DevNotesStats
         dateStatsFetchs = true;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     void BuildGraph()
     {
-        dateGraph = AnimationCurve.Linear(0, 0, 30, 30);
-        for (int i = 0; i < 30; i++)
+        dateGraph = AnimationCurve.Linear(0, 0, 30, 0);
+
+        for (int i = 0; i <= 30; i++)
         {
             int jobs = jobsInMonthPerDay.ContainsKey(i) ? jobsInMonthPerDay[i] : 0;
-            dateGraph.AddKey(new Keyframe(i, jobs));
+            if(i == 0 || i == 30)
+            dateGraph.MoveKey(i, new Keyframe(i, jobs));
+            else
+            dateGraph.AddKey(new Keyframe(i, jobs));           
         }
     }
 
